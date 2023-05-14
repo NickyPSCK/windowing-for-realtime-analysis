@@ -5,28 +5,24 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------
     # Example
     # ------------------------------------------------------------------------------
-    SW = SlidingTimeWindows(duration_size=6, period_size=6)
+    SW = SlidingTimeWindows(window_duration=6, window_period=3)
     for i in range(13):
-        print('\n')
-        new_windows_status, window = SW.add(i)
         time.sleep(1)
-        print('Is new window: ', new_windows_status)
-        print('Periods: ', SW.get_updated_window_periods())
-        print('Window: ', SW.get_updated_window())
-        print('State Window: ', window)
+        print('\n')
+        print('Add:     ', SW.add(i))
+        print('Periods: ', SW.get_current_window_periods())
+        print('Window:  ', SW.get_current_window())
 
     for i in range(13):
-        print('\n')
         time.sleep(1)
-        print('Periods: ', SW.get_updated_window_periods())
-        print('Window: ', SW.get_updated_window())
-        print('State Window: ', window)
+        print('\n')
+        print('Periods: ', SW.get_current_window_periods())
+        print('Window:  ', SW.get_current_window())
 
     for i in range(13):
-        print('\n')
-        new_windows_status, window = SW.add(i)
         time.sleep(1)
-        print('Is new window: ', new_windows_status)
-        print('Periods: ', SW.get_updated_window_periods())
-        print('Window: ', SW.get_updated_window())
-        print('State Window: ', window)
+        print('\n')
+        print('Add:     ', SW.add(i))
+        print('Periods: ', SW.get_current_window_periods())
+        print('Window:  ', SW.get_current_window())
+
