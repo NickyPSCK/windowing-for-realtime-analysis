@@ -159,6 +159,8 @@ class SlidingTimeWindows:
         return add_to_new_window, self._window_periods, current_window, current_window_boundary
 
     def start(self):
+        '''Start windowing
+        '''
         # Initialize Time
         self.is_started = True
         self.__start_time = time.time()
@@ -173,21 +175,26 @@ class SlidingTimeWindows:
         :type value: Any
 
         :rtype: Tuple[List[List], list]
-        :return: Tuple which contains "new_window_status" and "window" respectively
+        :return: Tuple which contains "add_to_new_window", "current_window" and "current_window_boundary" respectively
 
         .. notes::
-        "new_window_status" is "True" when the value is added to newly created window at first time.
+        "add_to_new_window" is "True" when the value is added to newly created window at first time.
+        "current_window_boundary" consist of 2 members which are the start and end time of the current window respectively
         '''
         add_to_new_window, _, current_window, current_window_boundary = self._add(value=value)
         return add_to_new_window, current_window, current_window_boundary
 
     @_check_start
-    def get_current_periods(self) -> List[List]:
+    def get_current_periods(self) -> Tuple[List[List], Tuple[datetime, datetime]]:
         '''Returns current window periods.
 
-        :rtype: List[List]
-        :return: current window periods
+        :rtype: Tuple[List[List], Tuple[datetime, datetime]]
+        :return: current_window_periods, current_window_boundary
+
+        .. notes::
+        "current_window_boundary" consist of 2 members which are the start and end time of the current window respectively
         '''
+
         _, current_window_periods, _, current_window_boundary = self._add(value=None)
         return current_window_periods, current_window_boundary
 
@@ -196,7 +203,7 @@ class SlidingTimeWindows:
         '''Returns current window
 
         :rtype: list
-        :return: current window
+        :return: current_window
         '''
         current_window_periods, _ = self.get_current_periods()
         current_window = sum(current_window_periods, [])
