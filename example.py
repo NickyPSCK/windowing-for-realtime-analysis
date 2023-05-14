@@ -10,19 +10,19 @@ if __name__ == '__main__':
         time.sleep(1)
         print('\n')
         print('Add:     ', SW.add(i))
-        print('Periods: ', SW.get_current_window_periods())
+        print('Periods: ', SW.get_current_periods())
         print('Window:  ', SW.get_current_window())
 
-    for i in range(13):
+    for i in range(16):
         time.sleep(1)
         print('\n')
-        print('Periods: ', SW.get_current_window_periods())
+        print('Periods: ', SW.get_current_periods())
         print('Window:  ', SW.get_current_window())
 
     for i in range(13):
-        time.sleep(1)
         print('\n')
         print('Add:     ', SW.add(i))
-        print('Periods: ', SW.get_current_window_periods())
+        time.sleep(1)
+        print('Periods: ', SW.get_current_periods())
         print('Window:  ', SW.get_current_window())
 

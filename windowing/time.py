@@ -1,5 +1,5 @@
 import time
-from time import strftime, localtime
+from datetime import datetime
 import math
 import copy
 from typing import List, Tuple, Any
@@ -25,19 +25,19 @@ class SlidingTimeWindows:
         >>>     new_windows_status, window = SW.add(i)
         >>>     time.sleep(1)
         >>>     print('Is new window: ', new_windows_status)
-        >>>     print('Periods: ', SW.get_current_window_periods())
+        >>>     print('Periods: ', SW.get_current_periods())
         >>>     print('Window: ', SW.get_current_window())
         >>>     print('State Window: ', window)
         >>> for i in range(13):
         >>>     time.sleep(1)
-        >>>     print('Periods: ', SW.get_current_window_periods())
+        >>>     print('Periods: ', SW.get_current_periods())
         >>>     print('Window: ', SW.get_current_window())
         >>>     print('State Window: ', window)
         >>> for i in range(13):
         >>>     new_windows_status, window = SW.add(i)
         >>>     time.sleep(1)
         >>>     print('Is new window: ', new_windows_status)
-        >>>     print('Periods: ', SW.get_current_window_periods())
+        >>>     print('Periods: ', SW.get_current_periods())
         >>>     print('Window: ', SW.get_current_window())
         >>>     print('State Window: ', window)
 
@@ -110,44 +110,15 @@ class SlidingTimeWindows:
                 'start_period_time': self.__start_period_time}
 
     def _calculate_window_boundary(self, start_period_time):
-        period_start = strftime('%Y-%m-%d %H:%M:%S',
-                                localtime(start_period_time - self._window_period * self._no_of_retain_periods))
-        period_end = strftime('%Y-%m-%d %H:%M:%S',
-                              localtime(start_period_time))
+        format = '%Y-%m-%d %H:%M:%S.%f'
+
+        period_start_ts = start_period_time - (self._window_period * self._no_of_retain_periods)
+        period_start = datetime.fromtimestamp(period_start_ts).strftime(format)
+
+        period_end_ts = start_period_time
+        period_end = datetime.fromtimestamp(period_end_ts).strftime(format)
         window_boundary = (period_start, period_end)
         return window_boundary
-
-    def get_current_window_periods(self) -> List[List]:
-        '''Returns current window periods.
-
-        :rtype: List[List]
-        :return: current window periods
-        '''
-        current_time = time.time()
-        time_diff = current_time - self.__start_period_time
-
-        if time_diff < self._window_period:
-            current_window_periods = self._window_periods
-            current_start_period_time = self.__start_period_time
-        else:
-            current_window_periods, _ = self._add_new_window_period(time_diff=time_diff,
-                                                                    value=None)
-            no_of_passed_periods = time_diff // self._window_period
-            current_start_period_time = self.__start_period_time + (self._window_period * no_of_passed_periods)
-
-        current_window_boundary = self._calculate_window_boundary(current_start_period_time)
-
-        return current_window_periods, current_window_boundary
-
-    def get_current_window(self) -> list:
-        '''Returns current window
-
-        :rtype: list
-        :return: current window
-        '''
-        current_window_periods, _ = self.get_current_window_periods()
-        current_window = sum(current_window_periods, [])
-        return current_window
 
     def _add(self,
              value: Any = None) -> Tuple[List[List], list]:
@@ -155,15 +126,17 @@ class SlidingTimeWindows:
         time_diff = current_time - self.__start_period_time
 
         if time_diff < self._window_period:
-            if value is not None:
-                self._period.append(value)
             add_to_new_window = False
+            if value is not None:
+                if len(self._period) == 0:
+                    add_to_new_window = True
+                self._period.append(value)
         else:
+            add_to_new_window = True
             self._window_periods, self._period = self._add_new_window_period(time_diff=time_diff,
                                                                              value=value)
             no_of_passed_periods = time_diff // self._window_period
             self.__start_period_time += (self._window_period * no_of_passed_periods)
-            add_to_new_window = True
 
         current_window_boundary = self._calculate_window_boundary(self.__start_period_time)
         current_window = sum(self._window_periods, [])
@@ -184,6 +157,25 @@ class SlidingTimeWindows:
         '''
         add_to_new_window, _, current_window, current_window_boundary = self._add(value=value)
         return add_to_new_window, current_window, current_window_boundary
+
+    def get_current_periods(self) -> List[List]:
+        '''Returns current window periods.
+
+        :rtype: List[List]
+        :return: current window periods
+        '''
+        _, current_window_periods, _, current_window_boundary = self._add(value=None)
+        return current_window_periods, current_window_boundary
+
+    def get_current_window(self) -> list:
+        '''Returns current window
+
+        :rtype: list
+        :return: current window
+        '''
+        current_window_periods, _ = self.get_current_periods()
+        current_window = sum(current_window_periods, [])
+        return current_window
 
 
 class FixedTimeWindows(SlidingTimeWindows):
