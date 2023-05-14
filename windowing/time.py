@@ -12,6 +12,17 @@ class SlidingTimeWindows:
     :type window_duration: float
     :param window_period: Window period (second)
     :type window_period: float
+    :param prompt_start: Start windowing when create instance,
+                         if false, need to be called .start() to start windowing.
+    :type prompt_start: bool
+    :param force_start: Automatically call .start()
+                        when one of the methods below is called at first time
+                        - get_current_periods
+                        - get_current_window
+                        - get_status
+    :type force_start: bool
+
+
 
     :raises ValueError: If window_duration cannot divisible by window_period.
 
@@ -19,27 +30,26 @@ class SlidingTimeWindows:
     :return: SlidingTimeWindows instance
 
     :Example:
+        >>> SW = SlidingTimeWindows(window_duration=6,
+        >>>                         window_period=3)
+        >>> for i in range(13):
+        >>>     time.sleep(1)
+        >>>     print('\n')
+        >>>     print('Add:     ', SW.add(i))
+        >>>     print('Periods: ', SW.get_current_periods())
+        >>>     print('Window:  ', SW.get_current_window())
+        >>> for i in range(13):
+        >>>     time.sleep(1)
+        >>>     print('\n')
+        >>>     print('Periods: ', SW.get_current_periods())
+        >>>     print('Window:  ', SW.get_current_window())
+        >>> for i in range(13):
+        >>>     time.sleep(1)
+        >>>     print('\n')
+        >>>     print('Add:     ', SW.add(i))
+        >>>     print('Periods: ', SW.get_current_periods())
+        >>>     print('Window:  ', SW.get_current_window())
 
-        >>> SW = SlidingTimeWindows(window_duration=6, window_period=2)
-        >>> for i in range(13):
-        >>>     new_windows_status, window = SW.add(i)
-        >>>     time.sleep(1)
-        >>>     print('Is new window: ', new_windows_status)
-        >>>     print('Periods: ', SW.get_current_periods())
-        >>>     print('Window: ', SW.get_current_window())
-        >>>     print('State Window: ', window)
-        >>> for i in range(13):
-        >>>     time.sleep(1)
-        >>>     print('Periods: ', SW.get_current_periods())
-        >>>     print('Window: ', SW.get_current_window())
-        >>>     print('State Window: ', window)
-        >>> for i in range(13):
-        >>>     new_windows_status, window = SW.add(i)
-        >>>     time.sleep(1)
-        >>>     print('Is new window: ', new_windows_status)
-        >>>     print('Periods: ', SW.get_current_periods())
-        >>>     print('Window: ', SW.get_current_window())
-        >>>     print('State Window: ', window)
 
     :Notes:
     A sliding time window also represents time intervals in the data stream;
@@ -54,7 +64,9 @@ class SlidingTimeWindows:
 
     def __init__(self,
                  window_duration: float,
-                 window_period: float):
+                 window_period: float,
+                 prompt_start: bool = True,
+                 force_start: bool = False):
 
         no_period = window_duration / window_period
         if no_period - math.floor(no_period) != 0:
@@ -62,14 +74,27 @@ class SlidingTimeWindows:
 
         self._window_duration = window_duration
         self._window_period = window_period
+        self._force_start = force_start
+
         self._no_of_retain_periods = int(self._window_duration / self._window_period)
 
         self._window_periods = self._no_of_retain_periods * [[]]
         self._period = list()
+        self.is_started = False
 
-        # Initialize Time
-        self.__start_time = time.time()
-        self.__start_period_time = self.__start_time
+        if prompt_start:
+            self.start()
+
+    def _check_start(class_method):
+        def method_wrapper(self, *arg, **kwarg):
+            if self.is_started:
+                return class_method(self, *arg, **kwarg)
+            elif (not self.is_started) and self._force_start:
+                self.start()
+                return class_method(self, *arg, **kwarg)
+            else:
+                raise RuntimeError('self.start() need to be called before proceeding the operation.')
+        return method_wrapper
 
     def _add_new_window_period(self,
                                time_diff: float,
@@ -99,15 +124,6 @@ class SlidingTimeWindows:
             tmp_period = list()
 
         return tmp_window_periods, tmp_period
-
-    def get_status(self) -> dict:
-        '''Returns instance status.
-
-        :rtype: dict
-        :return: instance status
-        '''
-        return {'start_time': self.__start_time,
-                'start_period_time': self.__start_period_time}
 
     def _calculate_window_boundary(self, start_period_time):
         format = '%Y-%m-%d %H:%M:%S.%f'
@@ -142,6 +158,13 @@ class SlidingTimeWindows:
         current_window = sum(self._window_periods, [])
         return add_to_new_window, self._window_periods, current_window, current_window_boundary
 
+    def start(self):
+        # Initialize Time
+        self.is_started = True
+        self.__start_time = time.time()
+        self.__start_period_time = self.__start_time
+
+    @_check_start
     def add(self,
             value: Any = None) -> Tuple[List[List], list]:
         '''Returns Tuple which contains "new_window_status" and "window" respectively
@@ -158,6 +181,7 @@ class SlidingTimeWindows:
         add_to_new_window, _, current_window, current_window_boundary = self._add(value=value)
         return add_to_new_window, current_window, current_window_boundary
 
+    @_check_start
     def get_current_periods(self) -> List[List]:
         '''Returns current window periods.
 
@@ -167,6 +191,7 @@ class SlidingTimeWindows:
         _, current_window_periods, _, current_window_boundary = self._add(value=None)
         return current_window_periods, current_window_boundary
 
+    @_check_start
     def get_current_window(self) -> list:
         '''Returns current window
 
@@ -176,6 +201,15 @@ class SlidingTimeWindows:
         current_window_periods, _ = self.get_current_periods()
         current_window = sum(current_window_periods, [])
         return current_window
+
+    def get_status(self) -> dict:
+        '''Returns instance status.
+
+        :rtype: dict
+        :return: instance status
+        '''
+        return {'start_time': self.__start_time,
+                'start_period_time': self.__start_period_time}
 
 
 class FixedTimeWindows(SlidingTimeWindows):
