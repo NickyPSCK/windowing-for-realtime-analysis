@@ -22,8 +22,6 @@ class SlidingTimeWindows:
                         - get_status
     :type force_start: bool
 
-
-
     :raises ValueError: If window_duration cannot divisible by window_period.
 
     :rtype: SlidingTimeWindows

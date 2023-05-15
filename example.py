@@ -26,4 +26,3 @@ if __name__ == '__main__':
         print('Add:     ', SW.add(i))
         print('Periods: ', SW.get_current_periods())
         print('Window:  ', SW.get_current_window())
-
